@@ -50,3 +50,4 @@ wcwidth==0.2.13
 wordcloud==1.9.4
 uvicorn[standard]
 fastapi
+python-multipart
