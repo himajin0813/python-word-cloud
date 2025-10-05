@@ -15,6 +15,7 @@ origins = [
     "http://localhost:3000",                   # 開発用（Next.js Dev Server）
     "https://my-next-app.onrender.com",        # Render上のNext.js（もしRenderにホストしている場合）
     "https://my-patent-app.pages.dev",         # Cloudflare Pages本番
+    "https://*.pages.dev",         # Cloudflare Pages本番
 ]
 
 app.add_middleware(
