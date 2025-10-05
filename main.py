@@ -10,15 +10,22 @@ from io import BytesIO
 
 app = FastAPI()
 
-# CORS設定を追加（フロントエンドからのアクセスを許可）
+# ✅ CORS設定：スキーム(https://)を含めて完全指定
+origins = [
+    "http://localhost:3000",                     # ローカル開発用
+    "https://python-word-cloud.onrender.com",    # RenderのURL
+    "https://my-patent-app.pages.dev",           # Cloudflare Pages本番URL
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 本番環境では具体的なドメインを指定
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ✅ フォントチェック
 FONT_PATH = "fonts/NotoSansJP-VariableFont_wght.ttf"
 if not os.path.exists(FONT_PATH):
     raise FileNotFoundError("日本語フォントが fonts フォルダにありません")
@@ -30,12 +37,12 @@ def health():
 @app.post("/generate-wordcloud")
 async def generate_wordcloud(file: UploadFile = File(...)):
     try:
-        # CSVファイルを一時的に保存
+        # 一時ファイルに保存
         with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
             tmp.write(await file.read())
             tmp_path = tmp.name
 
-        # CSVを読み込み
+        # CSV読み込み
         df = pd.read_csv(tmp_path)
         os.remove(tmp_path)
 
@@ -46,9 +53,7 @@ async def generate_wordcloud(file: UploadFile = File(...)):
                 content={"error": f"CSVに '{column_name}' 列がありません"}
             )
 
-        # テキストを結合
         text = " ".join(df[column_name].dropna().astype(str))
-        
         if not text.strip():
             return JSONResponse(
                 status_code=400,
@@ -69,10 +74,8 @@ async def generate_wordcloud(file: UploadFile = File(...)):
         img_buffer = BytesIO()
         wc.to_image().save(img_buffer, format='PNG')
         img_buffer.seek(0)
-        
-        # Base64エンコード
         img_base64 = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
-        
+
         return JSONResponse(content={
             "success": True,
             "image": f"data:image/png;base64,{img_base64}",
@@ -84,5 +87,3 @@ async def generate_wordcloud(file: UploadFile = File(...)):
             status_code=500,
             content={"error": f"処理中にエラーが発生しました: {str(e)}"}
         )
-
-
